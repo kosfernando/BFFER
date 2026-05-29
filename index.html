@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestor de Finanzas Pro</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+</head>
+<body>
+
+  <!-- FONDO ANIMADO -->
+  <div class="bg-scene">
+    <div class="blob blob1"></div>
+    <div class="blob blob2"></div>
+    <div class="blob blob3"></div>
+    <div class="grid-lines"></div>
+  </div>
+
+  <div id="app">
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+      <button class="nav-btn active" onclick="navigate('cuenta')" id="tab-cuenta">
+        <i class="ti ti-wallet"></i><span>Cuenta</span>
+      </button>
+      <button class="nav-btn" onclick="navigate('ahorro')" id="tab-ahorro">
+        <i class="ti ti-piggy-bank"></i><span>Ahorro</span>
+      </button>
+      <button class="nav-btn" onclick="navigate('movimientos')" id="tab-movimientos">
+        <i class="ti ti-list"></i><span>Movimientos</span>
+      </button>
+    </nav>
+
+    <!-- ===== SECCIÓN: CUENTA ===== -->
+    <div class="section visible" id="sec-cuenta">
+
+      <!-- HERO CARD -->
+      <div class="card hero-card">
+        <div class="hero-top">
+          <div>
+            <div class="card-label-light">Saldo disponible</div>
+            <div class="hero-num">S/ <span id="balance-disp">0.00</span></div>
+          </div>
+          <div class="hero-icon-wrap">
+            <i class="ti ti-wallet"></i>
+          </div>
+        </div>
+
+        <!-- RESERVA -->
+        <div class="reserve-chip">
+          <i class="ti ti-shield-lock"></i>
+          <span>Reserva que tienes que proteger: <strong>S/ 30.00</strong></span>
+        </div>
+
+        <div class="hero-divider"></div>
+
+        <!-- SALDO TOTAL + AHORRO -->
+        <div class="hero-bottom">
+          <div class="total-block">
+            <span class="total-label">Saldo total</span>
+            <span class="total-num">S/ <span id="total-disp">0.00</span></span>
+          </div>
+          <div class="total-block">
+            <span class="total-label">En ahorro</span>
+            <span class="total-num green">S/ <span id="savings-mini">0.00</span></span>
+          </div>
+        </div>
+
+        <div class="save-hint">Guardando <strong id="pct-label">20%</strong> de cada ingreso</div>
+
+        <!-- BOTÓN GASTAR -->
+        <button class="btn-spend" onclick="openSpend()">
+          <i class="ti ti-shopping-bag"></i>
+          <span>Registrar gasto</span>
+          <i class="ti ti-arrow-right btn-spend-arrow"></i>
+        </button>
+      </div>
+
+      <!-- FORMULARIO INGRESO -->
+      <div class="card">
+        <div class="card-label" style="margin-bottom:14px;">Nuevo ingreso</div>
+        <label class="field-label">¿Cuánto recibiste?</label>
+        <input class="neu-input" type="number" id="incomeInput" placeholder="ej. 150" min="0" step="any">
+        <label class="field-label">¿Qué % deseas ahorrar?</label>
+        <div class="slider-row">
+          <input type="range" min="0" max="80" value="20" id="savePct" oninput="updatePct()">
+          <span class="slider-val" id="pctDisplay">20%</span>
+        </div>
+        <button class="btn-primary" onclick="startAddIncome()">
+          <i class="ti ti-plus"></i> Agregar ingreso
+        </button>
+      </div>
+    </div>
+
+    <!-- ===== SECCIÓN: AHORRO ===== -->
+    <div class="section" id="sec-ahorro">
+      <div class="card">
+        <div class="card-label">Total ahorrado</div>
+        <div class="big-num">S/ <span id="savings-disp">0.00</span></div>
+        <div class="savings-bar-wrap">
+          <div class="savings-bar-bg">
+            <div class="savings-bar-fill" id="savBar" style="width:0%"></div>
+          </div>
+          <div class="savings-meta">
+            <span>Meta: S/ <span id="goal-val">500</span></span>
+            <span id="goal-pct">0%</span>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-label" style="margin-bottom:12px;">Meta de ahorro</div>
+        <label class="field-label">Define tu meta (S/)</label>
+        <input class="neu-input" type="number" id="goalInput" placeholder="ej. 500" value="500" oninput="updateGoal()">
+      </div>
+    </div>
+
+    <!-- ===== SECCIÓN: MOVIMIENTOS ===== -->
+    <div class="section" id="sec-movimientos">
+      <div class="card">
+        <div class="card-label" style="margin-bottom:12px;">Historial</div>
+        <div id="tx-list">
+          <div class="empty-state">
+            <i class="ti ti-mood-empty"></i>
+            <p>Sin movimientos aún</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /app -->
+
+  <!-- ===== MODAL: CATEGORÍA INGRESO ===== -->
+  <div class="overlay" id="overlay-income">
+    <div class="modal">
+      <div class="modal-title">¿De dónde viene este ingreso? <span class="optional-tag">(opcional)</span></div>
+      <div class="cat-grid" id="cat-grid-income"></div>
+      <p class="modal-hint">¿Prefieres no categorizar?</p>
+      <button class="skip-btn" onclick="confirmIncome(null)">Omitir y continuar</button>
+      <button class="btn-primary" onclick="confirmIncome(selectedIncomeCat)">Confirmar</button>
+    </div>
+  </div>
+
+  <!-- ===== MODAL: GASTO ===== -->
+  <div class="overlay" id="overlay-spend">
+    <div class="modal">
+      <div class="modal-spend-header">
+        <div class="modal-title" style="margin-bottom:4px;">¿En qué vas a gastar?</div>
+        <div class="balance-chip">Libre: S/ <span id="free-balance">0.00</span></div>
+      </div>
+      <label class="field-label" style="margin-top:14px;">Monto del gasto</label>
+      <input class="neu-input" type="number" id="spendInput" placeholder="ej. 25" min="0" step="any">
+      <label class="field-label">Categoría</label>
+      <div class="cat-grid" id="cat-grid-spend"></div>
+      <button class="btn-primary btn-spend-confirm" onclick="confirmSpend()">
+        <i class="ti ti-check"></i> Confirmar gasto
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== MODAL: ALERTA RESERVA ===== -->
+  <div class="overlay" id="overlay-alert">
+    <div class="modal modal-alert">
+      <div class="alert-icon-wrap">
+        <i class="ti ti-alert-triangle"></i>
+      </div>
+      <div class="alert-title">¡Cuidado con la reserva!</div>
+      <div class="alert-body" id="alert-body"></div>
+      <div class="alert-actions">
+        <button class="btn-alert-cancel" onclick="closeAlert()">Cancelar</button>
+        <button class="btn-alert-confirm" onclick="executeSpendWithSavings()">Sí, usar ahorros</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CERDITO VOLADOR -->
+  <div id="pig-anim">🐷</div>
+  <!-- MONEDA VOLADORA -->
+  <div id="coin-anim">💸</div>
+  <!-- CONFETTI -->
+  <div id="confetti-wrap"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
